@@ -30,7 +30,7 @@ const GetInvolved: React.FC = () => {
   // Donation Modal State
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   const [donationAmount, setDonationAmount] = useState<number | ''>('');
-  const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card' | 'pledge'>('mpesa');
+  const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card' | 'paypal' | 'stripe' | 'pledge'>('mpesa');
   const [donationDetails, setDonationDetails] = useState({
     fullName: '',
     phoneNumber: '',
@@ -87,6 +87,23 @@ const GetInvolved: React.FC = () => {
   };
 
   const predefinedAmounts = [25, 100, 500];
+
+  const getButtonLabel = () => {
+      if (donationStatus === 'submitting') {
+          return (
+            <svg className="animate-spin h-5 w-5 text-brand-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          );
+      }
+      switch (paymentMethod) {
+          case 'pledge': return 'Submit Pledge';
+          case 'paypal': return 'Proceed to PayPal';
+          case 'stripe': return 'Pay with Stripe';
+          default: return `Donate $${donationAmount || '0'}`;
+      }
+  };
 
   return (
     <section id="get-involved" className="py-20 bg-brand-teal text-white relative">
@@ -249,6 +266,8 @@ const GetInvolved: React.FC = () => {
                                 ? "Please check your phone for the M-Pesa prompt to complete your donation." 
                                 : paymentMethod === 'pledge'
                                 ? "Your pledge has been recorded. We appreciate your commitment!"
+                                : paymentMethod === 'paypal'
+                                ? "Redirecting to PayPal to complete your transaction..."
                                 : "Your donation has been processed successfully."}
                         </p>
                     </div>
@@ -287,25 +306,39 @@ const GetInvolved: React.FC = () => {
                             {/* Step 2: Payment Method */}
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-3">Payment Method</label>
-                                <div className="flex border rounded overflow-hidden">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod('mpesa')}
-                                        className={`flex-1 py-2 text-sm font-medium transition-colors ${paymentMethod === 'mpesa' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        className={`py-2 px-1 text-sm font-medium border rounded transition-colors ${paymentMethod === 'mpesa' ? 'bg-green-600 text-white border-green-600' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                                     >
                                         M-Pesa
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setPaymentMethod('card')}
-                                        className={`flex-1 py-2 text-sm font-medium transition-colors ${paymentMethod === 'card' ? 'bg-brand-blue text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        onClick={() => setPaymentMethod('paypal')}
+                                        className={`py-2 px-1 text-sm font-medium border rounded transition-colors ${paymentMethod === 'paypal' ? 'bg-[#003087] text-white border-[#003087]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                                     >
-                                        Card
+                                        PayPal
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentMethod('stripe')}
+                                        className={`py-2 px-1 text-sm font-medium border rounded transition-colors ${paymentMethod === 'stripe' ? 'bg-[#635BFF] text-white border-[#635BFF]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                                    >
+                                        Stripe
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaymentMethod('card')}
+                                        className={`py-2 px-1 text-sm font-medium border rounded transition-colors ${paymentMethod === 'card' ? 'bg-brand-blue text-white border-brand-blue' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
+                                    >
+                                        Credit Card
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setPaymentMethod('pledge')}
-                                        className={`flex-1 py-2 text-sm font-medium transition-colors ${paymentMethod === 'pledge' ? 'bg-brand-gold text-brand-blue' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        className={`py-2 px-1 text-sm font-medium border rounded transition-colors ${paymentMethod === 'pledge' ? 'bg-brand-gold text-brand-blue border-brand-gold' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
                                     >
                                         Pledge
                                     </button>
@@ -313,7 +346,7 @@ const GetInvolved: React.FC = () => {
                             </div>
 
                             {/* Step 3: Dynamic Fields */}
-                            <div className="bg-gray-50 p-4 rounded border border-gray-200">
+                            <div className="bg-gray-50 p-4 rounded border border-gray-200 min-h-[150px]">
                                 {paymentMethod === 'mpesa' && (
                                     <div className="space-y-3 animate-[fadeIn_0.3s_ease-out]">
                                         <div className="flex items-center space-x-2 text-green-700 mb-2">
@@ -332,6 +365,24 @@ const GetInvolved: React.FC = () => {
                                                 onChange={e => setDonationDetails({...donationDetails, phoneNumber: e.target.value})}
                                             />
                                         </div>
+                                    </div>
+                                )}
+
+                                {paymentMethod === 'paypal' && (
+                                    <div className="space-y-3 animate-[fadeIn_0.3s_ease-out] flex flex-col items-center justify-center h-full text-center">
+                                        <svg className="w-12 h-12 text-[#003087] mb-2" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.946 5.438-3.158 7.12-6.528 7.12h-1.553c-.383 0-.662.338-.718.718l-.94 5.96a.64.64 0 0 0 .633.741h.063l.775-4.918a.64.64 0 0 1 .632-.54h1.033c2.618 0 4.335-1.308 5.07-4.475.024-.122.046-.244.066-.367.635-4.04-1.29-5.654-4.832-5.654h-5.22a.64.64 0 0 0-.632.54l-3.8 24.118z"/>
+                                        </svg>
+                                        <p className="text-sm text-gray-600">You will be redirected to PayPal to complete your transaction securely.</p>
+                                    </div>
+                                )}
+
+                                {paymentMethod === 'stripe' && (
+                                    <div className="space-y-3 animate-[fadeIn_0.3s_ease-out] flex flex-col items-center justify-center h-full text-center">
+                                        <svg className="w-12 h-12 text-[#635BFF] mb-2" viewBox="0 0 24 24" fill="currentColor">
+                                             <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.926 0-1.366 1.162-1.928 2.534-1.928 1.936 0 3.19.824 3.738 2.016l3.354-1.922C19.168 1.996 16.924 0 13.568 0 8.65 0 5.378 2.946 5.378 7.026c0 5.022 6.642 5.252 6.642 8.01 0 1.636-1.38 2.158-3.036 2.158-2.614 0-4.01-1.222-4.57-2.67L.58 16.938C2.062 20.842 5.05 24 10.046 24c4.896 0 8.78-2.682 8.78-7.394 0-5.756-7.142-6.19-4.85-7.456z"/>
+                                        </svg>
+                                        <p className="text-sm text-gray-600">Pay securely with Credit Card, Google Pay, or Apple Pay via Stripe.</p>
                                     </div>
                                 )}
 
@@ -382,16 +433,12 @@ const GetInvolved: React.FC = () => {
                              <button 
                                 type="submit" 
                                 disabled={donationStatus === 'submitting'}
-                                className="w-full bg-brand-gold text-brand-blue font-bold py-3 rounded hover:bg-yellow-400 transition-colors flex justify-center items-center"
+                                className={`w-full font-bold py-3 rounded transition-colors flex justify-center items-center shadow-md
+                                    ${paymentMethod === 'paypal' ? 'bg-[#FFC439] text-[#003087] hover:bg-[#F2BA36]' : 
+                                      paymentMethod === 'stripe' ? 'bg-[#635BFF] text-white hover:bg-[#544DE8]' : 
+                                      'bg-brand-gold text-brand-blue hover:bg-yellow-400'}`}
                             >
-                                {donationStatus === 'submitting' ? (
-                                    <svg className="animate-spin h-5 w-5 text-brand-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                ) : (
-                                    paymentMethod === 'pledge' ? 'Submit Pledge' : `Donate $${donationAmount || '0'}`
-                                )}
+                                {getButtonLabel()}
                             </button>
                         </div>
                     </form>
